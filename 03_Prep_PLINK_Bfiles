@@ -1,0 +1,472 @@
+!df -ih
+Filesystem     Inodes IUsed IFree IUse% Mounted on
+overlay          7.3M  1.1M  6.2M   16% /
+tmpfs            1.9M    16  1.9M    1% /dev
+/dev/sdb          38M  1.3K   38M    1% /home/jupyter
+/dev/sda1        7.3M  1.1M  6.2M   16% /etc/hosts
+shm              1.9M     1  1.9M    1% /dev/shm
+tmpfs            1.9M     1  1.9M    1% /proc/acpi
+tmpfs            1.9M     1  1.9M    1% /proc/scsi
+tmpfs            1.9M     1  1.9M    1% /sys/firmware
+!df -h --total
+Filesystem      Size  Used Avail Use% Mounted on
+overlay         114G   57G   58G  50% /
+tmpfs            64M     0   64M   0% /dev
+/dev/sdb        590G  111G  480G  19% /home/jupyter
+/dev/sda1       114G   57G   58G  50% /etc/hosts
+shm              64M     0   64M   0% /dev/shm
+tmpfs           7.4G     0  7.4G   0% /proc/acpi
+tmpfs           7.4G     0  7.4G   0% /proc/scsi
+tmpfs           7.4G     0  7.4G   0% /sys/firmware
+total           840G  223G  617G  27% -
+!df -h --total|grep ^total
+total           840G  209G  631G  25% -
+#!plink --merge-list mergelist.txt --make-bed --out chr1-22
+PLINK v1.90b6.22 64-bit (16 Apr 2021)          www.cog-genomics.org/plink/1.9/
+(C) 2005-2021 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to chr1-22.log.
+Options in effect:
+  --make-bed
+  --merge-list mergelist.txt
+  --out chr1-22
+
+14998 MB RAM detected; reserving 7499 MB for main workspace.
+Warning: Unusually long variant ID(s) present.  PLINK 1.9 does not scale well
+to length-80+ variant IDs; consider using a different naming scheme for long
+indels and the like.
+# %%bash
+# rm merged.txt;
+# for i in $(seq 1 23)
+# do
+# echo "plink_bed/clinvar.chr$i.bed" >> merged.txt
+# echo "plink_bed/clinvar.chr$i.bim" >> merged.txt
+# echo "plink_bed/clinvar.chr$i.fam" >> merged.txt
+# done
+# !cat merged.txt
+plink_bed/clinvar.chr1.bed
+plink_bed/clinvar.chr1.bim
+plink_bed/clinvar.chr1.fam
+plink_bed/clinvar.chr2.bed
+plink_bed/clinvar.chr2.bim
+plink_bed/clinvar.chr2.fam
+plink_bed/clinvar.chr3.bed
+plink_bed/clinvar.chr3.bim
+plink_bed/clinvar.chr3.fam
+plink_bed/clinvar.chr4.bed
+plink_bed/clinvar.chr4.bim
+plink_bed/clinvar.chr4.fam
+plink_bed/clinvar.chr5.bed
+plink_bed/clinvar.chr5.bim
+plink_bed/clinvar.chr5.fam
+plink_bed/clinvar.chr6.bed
+plink_bed/clinvar.chr6.bim
+plink_bed/clinvar.chr6.fam
+plink_bed/clinvar.chr7.bed
+plink_bed/clinvar.chr7.bim
+plink_bed/clinvar.chr7.fam
+plink_bed/clinvar.chr8.bed
+plink_bed/clinvar.chr8.bim
+plink_bed/clinvar.chr8.fam
+plink_bed/clinvar.chr9.bed
+plink_bed/clinvar.chr9.bim
+plink_bed/clinvar.chr9.fam
+plink_bed/clinvar.chr10.bed
+plink_bed/clinvar.chr10.bim
+plink_bed/clinvar.chr10.fam
+plink_bed/clinvar.chr11.bed
+plink_bed/clinvar.chr11.bim
+plink_bed/clinvar.chr11.fam
+plink_bed/clinvar.chr12.bed
+plink_bed/clinvar.chr12.bim
+plink_bed/clinvar.chr12.fam
+plink_bed/clinvar.chr13.bed
+plink_bed/clinvar.chr13.bim
+plink_bed/clinvar.chr13.fam
+plink_bed/clinvar.chr14.bed
+plink_bed/clinvar.chr14.bim
+plink_bed/clinvar.chr14.fam
+plink_bed/clinvar.chr15.bed
+plink_bed/clinvar.chr15.bim
+plink_bed/clinvar.chr15.fam
+plink_bed/clinvar.chr16.bed
+plink_bed/clinvar.chr16.bim
+plink_bed/clinvar.chr16.fam
+plink_bed/clinvar.chr17.bed
+plink_bed/clinvar.chr17.bim
+plink_bed/clinvar.chr17.fam
+plink_bed/clinvar.chr18.bed
+plink_bed/clinvar.chr18.bim
+plink_bed/clinvar.chr18.fam
+plink_bed/clinvar.chr19.bed
+plink_bed/clinvar.chr19.bim
+plink_bed/clinvar.chr19.fam
+plink_bed/clinvar.chr20.bed
+plink_bed/clinvar.chr20.bim
+plink_bed/clinvar.chr20.fam
+plink_bed/clinvar.chr21.bed
+plink_bed/clinvar.chr21.bim
+plink_bed/clinvar.chr21.fam
+plink_bed/clinvar.chr22.bed
+plink_bed/clinvar.chr22.bim
+plink_bed/clinvar.chr22.fam
+plink_bed/clinvar.chr23.bed
+plink_bed/clinvar.chr23.bim
+plink_bed/clinvar.chr23.fam
+# %%bash
+# rm merged_list.txt;
+# for i in $(seq 1 22)
+# do
+# echo "plink/clinvar.chr$i.bed plink/clinvar.chr$i.bim plink/clinvar.chr$i.fam" >> merged_list.txt
+# done
+rm: cannot remove 'merged_list.txt': No such file or directory
+#Load in ALL chromosome data. 
+!gsutil -u $GOOGLE_PROJECT -m cp gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar* plink/
+#genetic markers files:: no header. columns:
+#chromosme | variant identifier | position in morgans/centimorgans | base-pair coordinate | alternative allele | reference allele
+
+print("bim file")
+!head -n 3 plink/*.bim
+
+# print("fam file")
+# !head -n 3 plink/*.fam
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr1.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr1.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr1.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr10.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr10.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr10.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr12.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr12.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr13.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr14.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr14.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr11.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr13.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr13.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr15.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr11.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr14.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr12.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr11.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr15.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr15.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr16.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr16.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr16.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr17.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr17.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr17.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr18.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr18.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr18.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr19.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr19.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr19.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr2.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr2.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr20.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr2.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr20.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr20.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr21.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr21.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr21.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr22.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr22.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr22.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr3.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr3.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr3.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr4.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr4.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr4.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr5.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr5.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr5.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr6.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr6.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr6.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr7.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr7.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr7.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr8.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr8.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr8.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr9.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr9.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chr9.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chrX.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chrX.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chrX.fam...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chrY.bed...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chrY.bim...
+Copying gs://fc-aou-datasets-controlled/v7/wgs/short_read/snpindel/clinvar/plink_bed/clinvar.chrY.fam...
+- [72/72 files][ 73.4 GiB/ 73.4 GiB] 100% Done  47.6 MiB/s ETA 00:00:00         
+Operation completed over 72 objects/73.4 GiB.                                    
+bim file
+==> plink/clinvar.chr10.bim <==
+chr10	chr10:47064:A:ACCTCCTCCTCGGCATACTCCTCATCCT	0.0	47064	ACCTCCTCCTCGGCATACTCCTCATCCT	A
+chr10	chr10:47064:A:G	0.0	47064	G	A
+chr10	chr10:47064:ACCT:A	0.0	47064	A	ACCT
+
+==> plink/clinvar.chr11.bim <==
+chr11	chr11:207359:C:CCACAGCCGCCTCAGACGT	0.0	207359	CCACAGCCGCCTCAGACGT	C
+chr11	chr11:207359:C:CCACAGCCGCCTCAGACGTGGCCACAGCCGCCTCAGACGT	0.0	207359	CCACAGCCGCCTCAGACGTGGCCACAGCCGCCTCAGACGT	C
+chr11	chr11:207359:C:CCACAGCCGCCTCAGACGTGGCCACAGCCGCCTCAGACGTGGCCACAGCCGCCTCAGACGT	0.0	207359	CCACAGCCGCCTCAGACGTGGCCACAGCCGCCTCAGACGTGGCCACAGCCGCCTCAGACGT	C
+
+==> plink/clinvar.chr12.bim <==
+chr12	chr12:138421:T:C	0.0	138421	C	T
+chr12	chr12:138424:G:A	0.0	138424	A	G
+chr12	chr12:138470:G:A	0.0	138470	A	G
+
+==> plink/clinvar.chr13.bim <==
+chr13	chr13:19467353:T:A	0.0	19467353	A	T
+chr13	chr13:19467353:T:TA	0.0	19467353	TA	T
+chr13	chr13:19467353:T:TAA	0.0	19467353	TAA	T
+
+==> plink/clinvar.chr14.bim <==
+chr14	chr14:19780619:A:G	0.0	19780619	G	A
+chr14	chr14:20292003:G:A	0.0	20292003	A	G
+chr14	chr14:20295764:G:A	0.0	20295764	A	G
+
+==> plink/clinvar.chr15.bim <==
+chr15	chr15:22786298:C:G	0.0	22786298	G	C
+chr15	chr15:22786298:C:T	0.0	22786298	T	C
+chr15	chr15:22786362:G:C	0.0	22786362	C	G
+
+==> plink/clinvar.chr16.bim <==
+chr16	chr16:51636:G:A	0.0	51636	A	G
+chr16	chr16:59290:G:A	0.0	59290	A	G
+chr16	chr16:60484:G:A	0.0	60484	A	G
+
+==> plink/clinvar.chr17.bim <==
+chr17	chr17:519146:G:A	0.0	519146	A	G
+chr17	chr17:519155:G:A	0.0	519155	A	G
+chr17	chr17:519155:G:C	0.0	519155	C	G
+
+==> plink/clinvar.chr18.bim <==
+chr18	chr18:163302:T:C	0.0	163302	C	T
+chr18	chr18:163302:T:G	0.0	163302	G	T
+chr18	chr18:163305:C:T	0.0	163305	T	C
+
+==> plink/clinvar.chr19.bim <==
+chr19	chr19:472422:G:T	0.0	472422	T	G
+chr19	chr19:507545:G:A	0.0	507545	A	G
+chr19	chr19:507641:G:A	0.0	507641	A	G
+
+==> plink/clinvar.chr1.bim <==
+chr1	chr1:925952:G:A	0.0	925952	A	G
+chr1	chr1:925956:C:A	0.0	925956	A	C
+chr1	chr1:925956:C:T	0.0	925956	T	C
+
+==> plink/clinvar.chr20.bim <==
+chr20	chr20:145514:GCAAA:G	0.0	145514	G	GCAAA
+chr20	chr20:145669:A:G	0.0	145669	G	A
+chr20	chr20:145669:ACC:A	0.0	145669	A	ACC
+
+==> plink/clinvar.chr21.bim <==
+chr21	chr21:10541121:G:A	0.0	10541121	A	G
+chr21	chr21:10541121:G:T	0.0	10541121	T	G
+chr21	chr21:10561201:A:G	0.0	10561201	G	A
+
+==> plink/clinvar.chr22.bim <==
+chr22	chr22:16591521:G:T	0.0	16591521	T	G
+chr22	chr22:17084966:C:A	0.0	17084966	A	C
+chr22	chr22:17084966:C:G	0.0	17084966	G	C
+
+==> plink/clinvar.chr2.bim <==
+chr2	chr2:264985:G:A	0.0	264985	A	G
+chr2	chr2:264985:G:T	0.0	264985	T	G
+chr2	chr2:265015:G:A	0.0	265015	A	G
+
+==> plink/clinvar.chr3.bim <==
+chr3	chr3:319804:C:G	0.0	319804	G	C
+chr3	chr3:319812:A:G	0.0	319812	G	A
+chr3	chr3:319864:T:G	0.0	319864	G	T
+
+==> plink/clinvar.chr4.bim <==
+chr4	chr4:372807:A:C	0.0	372807	C	A
+chr4	chr4:372807:A:G	0.0	372807	G	A
+chr4	chr4:372823:G:A	0.0	372823	A	G
+
+==> plink/clinvar.chr5.bim <==
+chr5	chr5:143375:C:G	0.0	143375	G	C
+chr5	chr5:143375:C:T	0.0	143375	T	C
+chr5	chr5:151606:G:A	0.0	151606	A	G
+
+==> plink/clinvar.chr6.bim <==
+chr6	chr6:348096:C:A	0.0	348096	A	C
+chr6	chr6:348096:C:T	0.0	348096	T	C
+chr6	chr6:392783:G:A	0.0	392783	A	G
+
+==> plink/clinvar.chr7.bim <==
+chr7	chr7:192800:G:A	0.0	192800	A	G
+chr7	chr7:193091:C:T	0.0	193091	T	C
+chr7	chr7:193205:G:A	0.0	193205	A	G
+
+==> plink/clinvar.chr8.bim <==
+chr8	chr8:1565843:C:A	0.0	1565843	A	C
+chr8	chr8:1633060:A:G	0.0	1633060	G	A
+chr8	chr8:1668552:A:G	0.0	1668552	G	A
+
+==> plink/clinvar.chr9.bim <==
+chr9	chr9:154795:T:C	0.0	154795	C	T
+chr9	chr9:214593:T:C	0.0	214593	C	T
+chr9	chr9:214679:G:A	0.0	214679	A	G
+
+==> plink/clinvar.chrX.bim <==
+chrX	chrX:624386:C:CCTT	0.0	624386	CCTT	C
+chrX	chrX:624386:C:CT	0.0	624386	CT	C
+chrX	chrX:624386:C:CTCCCCACACTT	0.0	624386	CTCCCCACACTT	C
+
+==> plink/clinvar.chrY.bim <==
+chrY	chrY:2787139:G:A	0.0	2787139	A	G
+chrY	chrY:2787334:G:C	0.0	2787334	C	G
+chrY	chrY:2787353:C:G	0.0	2787353	G	C
+!head -n 3 plink/*.bim
+# !cat merged_list.txt
+---------------------------------------------------------------------------
+KeyboardInterrupt                         Traceback (most recent call last)
+/opt/conda/lib/python3.7/site-packages/IPython/utils/_process_posix.py in system(self, cmd)
+    156             else:
+--> 157                 child = pexpect.spawn(self.sh, args=['-c', cmd])  # Vanilla Pexpect
+    158             flush = sys.stdout.flush
+
+/opt/conda/lib/python3.7/site-packages/pexpect/pty_spawn.py in __init__(self, command, args, timeout, maxread, searchwindowsize, logfile, cwd, env, ignore_sighup, echo, preexec_fn, encoding, codec_errors, dimensions, use_poll)
+    204         else:
+--> 205             self._spawn(command, args, preexec_fn, dimensions)
+    206         self.use_poll = use_poll
+
+/opt/conda/lib/python3.7/site-packages/pexpect/pty_spawn.py in _spawn(self, command, args, preexec_fn, dimensions)
+    303         self.ptyproc = self._spawnpty(self.args, env=self.env,
+--> 304                                      cwd=self.cwd, **kwargs)
+    305 
+
+/opt/conda/lib/python3.7/site-packages/pexpect/pty_spawn.py in _spawnpty(self, args, **kwargs)
+    314         '''Spawn a pty and return an instance of PtyProcess.'''
+--> 315         return ptyprocess.PtyProcess.spawn(args, **kwargs)
+    316 
+
+/opt/conda/lib/python3.7/site-packages/ptyprocess/ptyprocess.py in spawn(cls, argv, cwd, env, echo, preexec_fn, dimensions, pass_fds)
+    314         os.close(exec_err_pipe_write)
+--> 315         exec_err_data = os.read(exec_err_pipe_read, 4096)
+    316         os.close(exec_err_pipe_read)
+
+KeyboardInterrupt: 
+
+During handling of the above exception, another exception occurred:
+
+UnboundLocalError                         Traceback (most recent call last)
+/tmp/ipykernel_220/3909211699.py in <module>
+----> 1 get_ipython().system('cat merged_list.txt')
+
+/opt/conda/lib/python3.7/site-packages/ipykernel/zmqshell.py in system_piped(self, cmd)
+    634                 self.user_ns['_exit_code'] = system(cmd)
+    635         else:
+--> 636             self.user_ns['_exit_code'] = system(self.var_expand(cmd, depth=1))
+    637 
+    638     # Ensure new system_piped implementation is used
+
+/opt/conda/lib/python3.7/site-packages/IPython/utils/_process_posix.py in system(self, cmd)
+    171             # (the character is known as ETX for 'End of Text', see
+    172             # curses.ascii.ETX).
+--> 173             child.sendline(chr(3))
+    174             # Read and print any more output the program might produce on its
+    175             # way out.
+
+UnboundLocalError: local variable 'child' referenced before assignment
+#check if there is duplicate files, and remove them if there is 
+%%bash
+rm merged.txt;
+for i in $(seq 1 22); do
+    if ! grep -q "plink/clinvar.chr$i.bed plink/clinvar.chr$i.bim plink/clinvar.chr$i.fam" merged.txt; then
+    echo "plink/clinvar.chr$i.bed plink/clinvar.chr$i.bim plink/clinvar.chr$i.fam"  >> merged.txt
+fi
+done
+grep: merged.txt: No such file or directory
+!cat merged.txt
+plink/clinvar.chr1.bed plink/clinvar.chr1.bim plink/clinvar.chr1.fam
+plink/clinvar.chr2.bed plink/clinvar.chr2.bim plink/clinvar.chr2.fam
+plink/clinvar.chr3.bed plink/clinvar.chr3.bim plink/clinvar.chr3.fam
+plink/clinvar.chr4.bed plink/clinvar.chr4.bim plink/clinvar.chr4.fam
+plink/clinvar.chr5.bed plink/clinvar.chr5.bim plink/clinvar.chr5.fam
+plink/clinvar.chr6.bed plink/clinvar.chr6.bim plink/clinvar.chr6.fam
+plink/clinvar.chr7.bed plink/clinvar.chr7.bim plink/clinvar.chr7.fam
+plink/clinvar.chr8.bed plink/clinvar.chr8.bim plink/clinvar.chr8.fam
+plink/clinvar.chr9.bed plink/clinvar.chr9.bim plink/clinvar.chr9.fam
+plink/clinvar.chr10.bed plink/clinvar.chr10.bim plink/clinvar.chr10.fam
+plink/clinvar.chr11.bed plink/clinvar.chr11.bim plink/clinvar.chr11.fam
+plink/clinvar.chr12.bed plink/clinvar.chr12.bim plink/clinvar.chr12.fam
+plink/clinvar.chr13.bed plink/clinvar.chr13.bim plink/clinvar.chr13.fam
+plink/clinvar.chr14.bed plink/clinvar.chr14.bim plink/clinvar.chr14.fam
+plink/clinvar.chr15.bed plink/clinvar.chr15.bim plink/clinvar.chr15.fam
+plink/clinvar.chr16.bed plink/clinvar.chr16.bim plink/clinvar.chr16.fam
+plink/clinvar.chr17.bed plink/clinvar.chr17.bim plink/clinvar.chr17.fam
+plink/clinvar.chr18.bed plink/clinvar.chr18.bim plink/clinvar.chr18.fam
+plink/clinvar.chr19.bed plink/clinvar.chr19.bim plink/clinvar.chr19.fam
+plink/clinvar.chr20.bed plink/clinvar.chr20.bim plink/clinvar.chr20.fam
+plink/clinvar.chr21.bed plink/clinvar.chr21.bim plink/clinvar.chr21.fam
+plink/clinvar.chr22.bed plink/clinvar.chr22.bim plink/clinvar.chr22.fam
+!plink \
+    --merge-list merged.txt \
+    --make-bed \
+    --out all
+PLINK v1.90b6.22 64-bit (16 Apr 2021)          www.cog-genomics.org/plink/1.9/
+(C) 2005-2021 Shaun Purcell, Christopher Chang   GNU General Public License v3
+Logging to all.log.
+Options in effect:
+  --make-bed
+  --merge-list merged.txt
+  --out all
+
+14998 MB RAM detected; reserving 7499 MB for main workspace.
+Warning: Unusually long variant ID(s) present.  PLINK 1.9 does not scale well
+to length-80+ variant IDs; consider using a different naming scheme for long
+indels and the like.
+Warning: Variants 'chr1:925956:C:T' and 'chr1:925956:C:A' have the same
+position.
+Warning: Variants 'chr1:926010:G:T' and 'chr1:926010:G:A' have the same
+position.
+Warning: Variants 'chr1:926025:G:C' and 'chr1:926025:G:A' have the same
+position.
+347932 more same-position warnings: see log file.
+Performing 16-pass merge (245394 people, 80801/1241424 variants per pass).
+Pass 1 complete.                              
+Pass 2 complete.                              
+Pass 3 complete.                              
+Pass 4 complete.                              
+Pass 5 complete.                              
+Pass 6 complete.                              
+Pass 7 complete.                              
+Pass 8 complete.                              
+Pass 9 complete.                              
+Pass 10 complete.                             
+Pass 11 complete.                             
+Pass 12 complete.                             
+Pass 13 complete.                             
+Pass 14 complete.                             
+Pass 15 complete.                             
+Merged fileset written to all-merge.bed + all-merge.bim + all-merge.fam .
+1241424 variants loaded from .bim file.
+245394 people (0 males, 0 females, 245394 ambiguous) loaded from .fam.
+Ambiguous sex IDs written to all.nosex .
+Using 1 thread (no multithreaded calculations invoked).
+Before main variant filters, 245394 founders and 0 nonfounders present.
+Calculating allele frequencies... 10111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182838485868788899091929394959697989 done.
+Total genotyping rate is 0.980206.
+1241424 variants and 245394 people pass filters and QC.
+Note: No phenotypes present.
+--make-bed to all.bed + all.bim + all.fam ... 1011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859606162%
+!plink \
+    --merge-list plink/* \
+    --make-bed \
+    --out all_chrom
+# %%bash
+# plink --bfile plink/clinvar.chr1 --merge-list merged.txt --make-bed --out all
+
+# total=0
+# for i in $(seq 1 22)
+# do
+#     total=$(($total + $(wc -l < plink/clinvar.chr$i.bim)))
+# done
+!ls
