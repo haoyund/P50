@@ -1,10 +1,12 @@
-This notebook retrieves EHR, demographic, and survey data for our OUD case-control samples from the All of Us database
+# This notebook retrieves EHR, demographic, and survey data for our OUD case-control samples from the All of Us database
 
+```
 library(bigrquery)
 library(lubridate)
 library(tidyverse)
 Loading required package: timechange
-
+```
+```
 Warning message in system("timedatectl", intern = TRUE):
 “running command 'timedatectl' had status 1”
 
@@ -29,7 +31,11 @@ The following objects are masked from ‘package:base’:
 ✖ dplyr::lag()             masks stats::lag()
 ✖ lubridate::setdiff()     masks base::setdiff()
 ✖ lubridate::union()       masks base::union()
+```
+
 Create a function formulate_and_run_multipart_query to combine results from multiple queries
+
+```
 formulate_and_run_multipart_query <- function(subqueries, final_tbl) {
     query <- str_c('WITH\n', str_c(subqueries, collapse = ',\n\n'), str_glue('\n\n\nSELECT * FROM {final_tbl}'))
     message(query)               
@@ -40,6 +46,9 @@ formulate_and_run_multipart_query <- function(subqueries, final_tbl) {
     message(str_glue('Dimensions of result: num_rows={nrow(results)} num_cols={ncol(results)}'))
     return(results)
 }
+```
+
+```
 DATESTAMP <- strftime(now(), '%Y%m%d')
 DESTINATION <- str_glue('{Sys.getenv("WORKSPACE_BUCKET")}/data/aou/pheno/{DATESTAMP}/')
 CASE_FILENAME <- 'case.csv'
@@ -50,7 +59,11 @@ TEST_CASE_FILENAME <- 'test_case.csv'
 TEST_CASE_ID_FILENAME <- 'test_case_ids.tsv'
 TEST_CONTROL_FILENAME <- 'test_control.csv'
 TEST_CONTROL_ID_FILENAME <- 'test_control_ids.tsv'
+```
+
 Query for demographics data, select on everyone on All of Us that has srWGS data
+
+```
 DEMOGRAPHICS_QUERY <- str_glue('
 -- This query represents dataset "Demographics for AoU WGS cohort" for domain "person" and was
 -- generated for All of Us Controlled Tier Dataset v5 alpha and then further edited.
@@ -101,7 +114,9 @@ demographics_tbl AS (
 )
 
 SELECT * FROM demographics_tbl
+```
 
+```
 Dimensions of result: num_rows=245388 num_cols=6
 
 1936-06-15	3524098	I prefer not to answer	I prefer not to answer	PMI: Prefer Not To Answer	I prefer not to answer
@@ -110,7 +125,11 @@ Dimensions of result: num_rows=245388 num_cols=6
 2001-06-15	1419254	PMI: Skip	PMI: Skip	PMI: Skip	No matching concept
 2002-06-15	3326982	PMI: Skip	PMI: Skip	PMI: Skip	No matching concept
 2002-06-15	1468095	PMI: Skip	PMI: Skip	PMI: Skip	No matching concept
+```
+
 Query for case sample, select on people with ICD10 codes 438120, 438130, 440693
+
+```
 OPIOID_CONDITIONS_QUERY <- "
 opioid_conditions_tbl AS (
     SELECT
@@ -258,8 +277,11 @@ opioid_conditions_tbl AS (
                                 LEFT JOIN
                                     `concept` c_standard_concept 
                                         ON c_occurrence.condition_concept_id = c_standard_concept.concept_id)"
+```
+
 3a. Query for filling all entries in start and end times so that we don't have null values. This is because some condition records do not have an end time. When that is the case, use the start time as the end time.
 
+```
 OPIOID_CONDITIONS_WITH_END_TIME_FILLED_QUERY <- '
 opioid_conditions_with_end_time_filled_tbl AS (
     SELECT
@@ -272,8 +294,11 @@ opioid_conditions_with_end_time_filled_tbl AS (
     FROM
         opioid_conditions_tbl
 )'
+```
+
 3b. Query for counting the condition occurrences for each person. This is because one person can be diagnosed with the same condition at different times. We also want to determine the outer bounds of the time interval over which the person has been diagnosed with OUD.
 
+```
 OPIOID_CONDITIONS_SUMMARY_PER_PERSON_QUERY <- '
 opioid_conditions_summary_per_person_tbl AS (
     SELECT
@@ -288,8 +313,11 @@ opioid_conditions_summary_per_person_tbl AS (
     GROUP BY
         person_id
 )'
+```
+
 3c. Query for combining the three queries defined above
 
+```
 opioid_conditions_summary_per_person <- formulate_and_run_multipart_query(
     c(DEMOGRAPHICS_QUERY, 
       OPIOID_CONDITIONS_QUERY,
@@ -319,8 +347,8 @@ demographics_tbl AS (
         SELECT person_id from `cb_search_person` p
         WHERE has_whole_genome_variant = 1))
 ),
-
-
+```
+```
 opioid_conditions_tbl AS (
     SELECT
         c_occurrence.person_id as person_id,
@@ -467,8 +495,8 @@ opioid_conditions_tbl AS (
                                 LEFT JOIN
                                     `concept` c_standard_concept 
                                         ON c_occurrence.condition_concept_id = c_standard_concept.concept_id),
-
-
+```
+```
 opioid_conditions_with_end_time_filled_tbl AS (
     SELECT
         person_id,
@@ -480,8 +508,8 @@ opioid_conditions_with_end_time_filled_tbl AS (
     FROM
         opioid_conditions_tbl
 ),
-
-
+```
+```
 opioid_conditions_summary_per_person_tbl AS (
     SELECT
         person_id,
@@ -497,7 +525,8 @@ opioid_conditions_summary_per_person_tbl AS (
 )
 
 SELECT * FROM opioid_conditions_summary_per_person_tbl
-
+```
+```
 Dimensions of result: num_rows=6144 num_cols=6
 
 opioid_conditions_summary_per_person %>%
@@ -523,6 +552,9 @@ opioid_conditions_summary_per_person %>%
 1068273	2002-05-28 00:00:00	2022-05-27 11:59:59	588	7	Combined opioid with other drug dependence in remission, Opioid dependence in remission, Combined opioid with other drug dependence, Opioid abuse, Episodic opioid dependence, Opioid dependence, Combined opioid with other drug dependence, continuous
 1070882	2012-03-01 00:00:00	2022-05-25 11:59:59	581	4	Combined opioid with other drug dependence, Opioid abuse, Opioid dependence, Opioid dependence in remission
 3002988	2013-03-01 00:00:00	2022-05-18 11:59:59	574	4	Opioid abuse, Opioid dependence, Continuous opioid dependence, Opioid dependence in remission
+```
+
+```
 opioid_conditions_summary_per_person %>%
     arrange(desc(opioid_condition_count)) %>%
     tail(n = 20)
@@ -569,8 +601,11 @@ opioid_conditions_summary_per_person %>%
 1076613	2004-04-08 10:48:00	2018-04-10 20:55:00	32	5	Combined opioid with other drug dependence, continuous, Continuous opioid dependence, Episodic opioid dependence, Opioid abuse, Opioid dependence
 3138149	2012-04-27 21:29:00	2019-04-15 00:00:00	292	5	Combined opioid with other drug dependence, continuous, Opioid dependence, Opioid dependence in remission, Continuous opioid dependence, Opioid abuse
 1450821	2008-05-08 10:14:07	2016-11-02 10:30:00	79	5	Combined opioid with other drug dependence, continuous, Opioid abuse, Opioid dependence, Combined opioid with other drug dependence, Episodic opioid dependence
+```
+
 3d. Query for combining demographics and OUD conditions into one dataframe for case sample
 
+```
 CASE_QUERY <- '
 case_tbl AS (
     SELECT
@@ -613,8 +648,9 @@ demographics_tbl AS (
         SELECT person_id from `cb_search_person` p
         WHERE has_whole_genome_variant = 1))
 ),
+```
 
-
+```
 opioid_conditions_tbl AS (
     SELECT
         c_occurrence.person_id as person_id,
@@ -761,8 +797,9 @@ opioid_conditions_tbl AS (
                                 LEFT JOIN
                                     `concept` c_standard_concept 
                                         ON c_occurrence.condition_concept_id = c_standard_concept.concept_id),
+```
 
-
+```
 opioid_conditions_with_end_time_filled_tbl AS (
     SELECT
         person_id,
@@ -774,8 +811,9 @@ opioid_conditions_with_end_time_filled_tbl AS (
     FROM
         opioid_conditions_tbl
 ),
+```
 
-
+```
 opioid_conditions_summary_per_person_tbl AS (
     SELECT
         person_id,
@@ -789,8 +827,9 @@ opioid_conditions_summary_per_person_tbl AS (
     GROUP BY
         person_id
 ),
+```
 
-
+```
 case_tbl AS (
     SELECT
         demog.*,
@@ -804,7 +843,9 @@ case_tbl AS (
 )
 
 SELECT * FROM case_tbl
+```
 
+```
 Dimensions of result: num_rows=6144 num_cols=11
 
 colnames(case)
@@ -826,7 +867,11 @@ head(case)
 1963-06-15	1027261	Black or African American	Gender Identity: Transgender	Not Hispanic or Latino	I prefer not to answer	2009-06-02 00:00:00	2009-06-04 11:59:59	1	1	Opioid abuse
 1986-06-15	1179190	None of these	Gender Identity: Non Binary	What Race Ethnicity: Race Ethnicity None Of These	Intersex	2022-05-12 23:21:15	2022-05-12 23:21:15	1	1	Opioid abuse
 1999-06-15	2366246	White	Not man only, not woman only, prefer not to answer, or skipped	Not Hispanic or Latino	None	2018-11-15 17:40:00	2018-11-15 17:40:00	1	1	Opioid abuse
+```
+
+
 Query for control sample, select on people who answered "yes" to some degrees of opioid consumption, but excluding those who are already in our case sample
+```
 ## control
 OPIOID_SURVEYS_QUERY <- "
 opioid_surveys_tbl AS (
@@ -936,6 +981,8 @@ opioid_surveys_tbl AS (
                                     )
                                 ) criteria 
                             ))))"
+```
+```
 opioid_surveys_summary_per_person <- formulate_and_run_multipart_query(
     c(OPIOID_SURVEYS_QUERY),
     'opioid_surveys_tbl')
@@ -1050,7 +1097,9 @@ opioid_surveys_tbl AS (
                             ))))
 
 SELECT * FROM opioid_surveys_tbl
+```
 
+```
 Dimensions of result: num_rows=90351 num_cols=4
 
 opioid_surveys_summary_per_person %>%
@@ -1075,6 +1124,9 @@ opioid_surveys_summary_per_person %>%
 9335747	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Cocaine Use
 2823696	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Cocaine Use
 1356080	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Cocaine Use
+```
+
+```
 CONTROL_QUERY <- '
 control_tbl AS (
     SELECT
@@ -1115,8 +1167,9 @@ demographics_tbl AS (
         SELECT person_id from `cb_search_person` p
         WHERE has_whole_genome_variant = 1))
 ),
+```
 
-
+```
 opioid_surveys_tbl AS (
     SELECT
         answer.person_id,
@@ -1224,8 +1277,9 @@ opioid_surveys_tbl AS (
                                     )
                                 ) criteria 
                             )))),
+```
 
-
+```
 control_tbl AS (
     SELECT
         demog.*,
@@ -1239,7 +1293,9 @@ control_tbl AS (
 )
 
 SELECT * FROM control_tbl
+```
 
+```
 Dimensions of result: num_rows=90351 num_cols=9
 
 colnames(control)
@@ -1259,15 +1315,22 @@ head(control)
 1986-06-15	2079342	White	Not man only, not woman only, prefer not to answer, or skipped	Not Hispanic or Latino	Intersex	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Hallucinogens Use
 1990-06-15	2291241	Black or African American	Male	Not Hispanic or Latino	None	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Methamphetamine Use
 1974-06-15	4933067	White	I prefer not to answer	Not Hispanic or Latino	I prefer not to answer	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Marijuana Use
+```
+
 4a. Take a look at number of responses for each question in a temporary dataframe, we want to select on people who have used OUD but not on a daily bases, since those people are most likely undiagnosed with OUD.
 
-we want our control to be everyone who has taken opioid
-exclude those who have taken opioid on a daily basis, since they are most likely undiagonosed cases
-exclude those who have answered "Never" to taking opioids
+- we want our control to be everyone who has taken opioid
+- exclude those who have taken opioid on a daily basis, since they are most likely undiagonosed cases
+- exclude those who have answered "Never" to taking opioids
+
+```
 temp1 <- 
     control %>%
     dplyr::group_by(question, answer) %>%
     dplyr::summarise(countp = n_distinct(person_id))
+```
+
+```
 temp1
 `summarise()` has grouped output by 'question'. You can override using the
 `.groups` argument.
@@ -1296,11 +1359,16 @@ Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Opioids U
 Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Stimulants Use	7769
 Recreational Drug Use: Which Drugs Used	Which Drugs Used: Sedatives Use	9390
 Recreational Drug Use: Which Drugs Used	Which Drugs Used: Street Opioids Use	7018
+```
+```
 temp1$control <- NULL
 temp1[grep("Opioid", temp1$answer), "control"] <- 1 #we want our control to be everyone who has taken opioid  
 temp1[grep("Daily", temp1$answer), "control"] <- NA #exclude those who have taken opioid on a daily basis, since they are most likely undiagonosed cases
 temp1[grep("Never", temp1$answer), "control"] <- NA #exclude those who have answered "Never" to taking opioids
 temp1
+```
+
+```
 Past 3 Month Use Frequency: Prescription Opioid 3 Month Use	PMI: Prefer Not To Answer	21	NA
 Past 3 Month Use Frequency: Prescription Opioid 3 Month Use	PMI: Skip	27	NA
 Past 3 Month Use Frequency: Prescription Opioid 3 Month Use	Prescription Opioid 3 Month Use: Daily	111	NA
@@ -1326,17 +1394,27 @@ Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Opioids U
 Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Stimulants Use	7769	NA
 Recreational Drug Use: Which Drugs Used	Which Drugs Used: Sedatives Use	9390	NA
 Recreational Drug Use: Which Drugs Used	Which Drugs Used: Street Opioids Use	7018	1
+```
+
+
 4b. After confirming the desired set of people, run the code above on control dataframe
 
+
+```
 control$control <- NULL
 control[grep("Opioid", control$answer), "control"] <- 1
 control[grep("Daily", control$answer), "control"] <- NA
 control[grep("Never", control$answer), "control"] <- NA
 control_opioid_only <- control[!is.na(control$control),]
+```
+```
 dim(control_opioid_only)
 head(control_opioid_only)
+```
+```
 24705
 10
+
 1998-06-15	1709008	White	Male	Not Hispanic or Latino	I prefer not to answer	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Opioids Use	1
 1984-06-15	1447530	I prefer not to answer	I prefer not to answer	PMI: Prefer Not To Answer	I prefer not to answer	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Opioids Use	1
 1986-06-15	2079342	White	Not man only, not woman only, prefer not to answer, or skipped	Not Hispanic or Latino	Intersex	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Opioids Use	1
@@ -1408,13 +1486,23 @@ control_opioid_only[duplicated(control_opioid_only$person_id)|duplicated(control
 1956-06-15	1207323	PMI: Skip	PMI: Skip	PMI: Skip	No matching concept	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Street Opioids Use	1
 1957-06-15	1806939	PMI: Skip	PMI: Skip	PMI: Skip	No matching concept	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Street Opioids Use	1
 1986-06-15	2984206	PMI: Skip	PMI: Skip	PMI: Skip	No matching concept	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Street Opioids Use	1
+```
+
+```
 #take a look a one person, it turns out that there are duplicated person_id because those people have answered "yes" to both taken prescription and street opioids
 control_opioid_only %>% filter(person_id == 2449537)
 1989-06-15	2449537	I prefer not to answer	Not man only, not woman only, prefer not to answer, or skipped	PMI: Prefer Not To Answer	I prefer not to answer	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Street Opioids Use	1
 1989-06-15	2449537	I prefer not to answer	Not man only, not woman only, prefer not to answer, or skipped	PMI: Prefer Not To Answer	I prefer not to answer	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Opioids Use	1
+```
+
+```
 control_opioid_only_nodup <- control_opioid_only %>% distinct(person_id, .keep_all = TRUE)
 dim(control_opioid_only)
 head(control_opioid_only)
+```
+
+
+```
 24705
 10
 1998-06-15	1709008	White	Male	Not Hispanic or Latino	I prefer not to answer	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Opioids Use	1
@@ -1423,7 +1511,13 @@ head(control_opioid_only)
 1969-06-15	1904084	Black or African American	Female	Not Hispanic or Latino	Intersex	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Street Opioids Use	1
 1973-06-15	1643978	I prefer not to answer	I prefer not to answer	PMI: Prefer Not To Answer	I prefer not to answer	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Opioids Use	1
 1990-06-15	2291241	Black or African American	Male	Not Hispanic or Latino	None	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Street Opioids Use	1
+```
+
+
+
 Save case and control as csv files
+
+```
 write_csv(case, CASE_FILENAME)
 write_tsv(case  %>%
               mutate(
@@ -1442,14 +1536,25 @@ write_tsv(control_opioid_only  %>%
               select(FID, IID) %>%
               distinct(),
           CONTROL_ID_FILENAME)
+```
+
+```
 system(str_glue('gsutil cp {CASE_FILENAME} {CASE_ID_FILENAME} {CONTROL_FILENAME} {CONTROL_ID_FILENAME} {DESTINATION}'), intern = T)
 system(str_glue('gsutil ls -lh {DESTINATION}'), intern = T)
+```
+
+```
 ' 934.5 KiB  2023-08-11T15:58:40Z  gs://fc-secure-c8b84a93-2a47-44c5-bd2c-56358bb9a84e/data/aou/pheno/20230811/case.csv'
 ' 96.01 KiB  2023-08-11T15:58:40Z  gs://fc-secure-c8b84a93-2a47-44c5-bd2c-56358bb9a84e/data/aou/pheno/20230811/case_ids.tsv'
 '  3.99 MiB  2023-08-11T15:58:43Z  gs://fc-secure-c8b84a93-2a47-44c5-bd2c-56358bb9a84e/data/aou/pheno/20230811/control.csv'
 ' 319.9 KiB  2023-08-11T15:58:43Z  gs://fc-secure-c8b84a93-2a47-44c5-bd2c-56358bb9a84e/data/aou/pheno/20230811/control_ids.tsv'
 'TOTAL: 4 objects, 5568266 bytes (5.31 MiB)'
+```
+
+
 Dividing case s and controls into ancestry groups
+
+```
 #subset of case and control
 #take a look at the race  data
 dim(case)
@@ -1459,6 +1564,9 @@ case %>%
     count(race)
 control_opioid_only %>%
     count(race)
+```
+
+```
 6144
 11
 24705
@@ -1483,10 +1591,17 @@ None Indicated	2661
 None of these	349
 PMI: Skip	477
 White	15510
+```
+
+
+```
 #subset of black or african american
 case_afr <- case %>%
     filter(race == "Black or African American")
 case_afr
+```
+
+```
 1963-06-15	1027261	Black or African American	Gender Identity: Transgender	Not Hispanic or Latino	I prefer not to answer	2009-06-02 00:00:00	2009-06-04 11:59:59	1	1	Opioid abuse
 1988-06-15	1596947	Black or African American	I prefer not to answer	Not Hispanic or Latino	None	2011-10-18 00:00:00	2013-06-04 00:00:00	4	3	Opioid dependence, Continuous opioid dependence, Opioid abuse
 1952-06-15	3010176	Black or African American	Male	Not Hispanic or Latino	Male	2003-05-27 18:00:00	2013-10-22 12:18:00	2	2	Episodic opioid dependence, Opioid dependence
@@ -1678,6 +1793,9 @@ control_ME
 1967-06-15	1701811	Black or African American	Male	Not Hispanic or Latino	PMI: Skip	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Opioids Use	1
 1961-06-15	2185486	Black or African American	PMI: Skip	Not Hispanic or Latino	PMI: Skip	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Street Opioids Use	1
 1960-06-15	2651610	Black or African American	Male	Not Hispanic or Latino	PMI: Skip	Lifestyle	Recreational Drug Use: Which Drugs Used	Which Drugs Used: Prescription Opioids Use	1
+```
+
+```
 write_csv(case_ME, TEST_CASE_FILENAME)
 write_tsv(case_ME  %>%
               mutate(
@@ -1696,8 +1814,15 @@ write_tsv(control_ME  %>%
               select(FID, IID) %>%
               distinct(),
           TEST_CONTROL_ID_FILENAME)
+```
+
+```
 system(str_glue('gsutil cp {TEST_CASE_FILENAME} {TEST_CASE_ID_FILENAME} {TEST_CONTROL_FILENAME} {TEST_CONTROL_ID_FILENAME} {DESTINATION}'), intern = T)
 system(str_glue('gsutil ls -lh {DESTINATION}'), intern = T)
+```
+
+
+```
 ' 934.5 KiB  2023-08-11T15:58:40Z  gs://fc-secure-c8b84a93-2a47-44c5-bd2c-56358bb9a84e/data/aou/pheno/20230811/case.csv'
 ' 96.01 KiB  2023-08-11T15:58:40Z  gs://fc-secure-c8b84a93-2a47-44c5-bd2c-56358bb9a84e/data/aou/pheno/20230811/case_ids.tsv'
 '  3.99 MiB  2023-08-11T15:58:43Z  gs://fc-secure-c8b84a93-2a47-44c5-bd2c-56358bb9a84e/data/aou/pheno/20230811/control.csv'
@@ -1707,7 +1832,15 @@ system(str_glue('gsutil ls -lh {DESTINATION}'), intern = T)
 '803.52 KiB  2023-08-11T15:58:49Z  gs://fc-secure-c8b84a93-2a47-44c5-bd2c-56358bb9a84e/data/aou/pheno/20230811/test_control.csv'
 ' 59.24 KiB  2023-08-11T15:58:49Z  gs://fc-secure-c8b84a93-2a47-44c5-bd2c-56358bb9a84e/data/aou/pheno/20230811/test_control_ids.tsv'
 'TOTAL: 8 objects, 6775778 bytes (6.46 MiB)'
+```
+
+
+```
 devtools::session_info()
+```
+
+
+```
 #plot demographic data
 race_counts <- select(case, race) %>% group_by(race)
 race_counts <- count(race_counts, race)
@@ -1719,6 +1852,9 @@ par(mar=c(3,15,3,1)) # increase y-axis margin
 race_counts
 barplot(race_counts$count, main="Race and Ancestry Distr for Case", horiz = TRUE, 
         names.arg = race_counts$race, cex.names = 0.8)
+```
+
+```
 Asian	27
 Black or African American	1779
 I prefer not to answer	67
@@ -1729,6 +1865,9 @@ None Indicated	809
 None of these	99
 PMI: Skip	158
 White	3075
+```
+
+```
 control_counts <- select(control, race) %>% group_by(race)
 control_counts <- count(control_counts, race)
 colnames(control_counts) <- c('race','count')
@@ -1739,6 +1878,10 @@ par(mar=c(3,15,3,1)) # increase y-axis margin
 control_counts
 barplot(control_counts$count, main="Race and Ancestry Distr for Control", horiz = TRUE, 
         names.arg = control_counts$race, cex.names = 0.8)
+```
+
+
+```
 Asian	1210
 Black or African American	13087
 I prefer not to answer	622
@@ -1749,3 +1892,4 @@ None Indicated	9244
 None of these	1363
 PMI: Skip	1709
 White	60334
+```
