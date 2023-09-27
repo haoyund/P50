@@ -1,6 +1,6 @@
 This workspace documents the steps to run a GWAS case-control study on OUD
 
-Please run the notebooks in the following order:
+Please run the notebooks in the following order: </p>
 
 01_Prepare_Case_Control_Samples
 This notebook extracts EHR, demographics, and survey data from All of Us based on our case and control definitions for OUD.
