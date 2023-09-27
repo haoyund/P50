@@ -1,4 +1,4 @@
-**This workspace documents the steps to run a GWAS case-control study on OUD**
+# This workspace documents the steps to run a GWAS case-control study on OUD
 
 Please run the notebooks in the following order: 
 
