@@ -1,11 +1,9 @@
 This notebook retrieves EHR, demographic, and survey data for our OUD case-control samples from the All of Us database
 
-```
 library(bigrquery)
 library(lubridate)
 library(tidyverse)
 Loading required package: timechange
-```
 
 Warning message in system("timedatectl", intern = TRUE):
 “running command 'timedatectl' had status 1”
