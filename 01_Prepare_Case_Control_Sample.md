@@ -1,40 +1,14 @@
-# This notebook retrieves EHR, demographic, and survey data for our OUD case-control samples from the All of Us database
-
+# 01_Prepare_Case_Control_Sample
+## This notebook retrieves EHR, demographic, and survey data for our OUD case-control samples from the All of Us database
+### Load Packages 
 ```
 library(bigrquery)
 library(lubridate)
 library(tidyverse)
 Loading required package: timechange
 ```
-```
-Warning message in system("timedatectl", intern = TRUE):
-“running command 'timedatectl' had status 1”
-
-Attaching package: ‘lubridate’
-
-
-The following objects are masked from ‘package:base’:
-
-    date, intersect, setdiff, union
-
-
-── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
-✔ ggplot2 3.4.0      ✔ purrr   0.3.5 
-✔ tibble  3.1.8      ✔ dplyr   1.0.10
-✔ tidyr   1.2.1      ✔ stringr 1.5.0 
-✔ readr   2.1.3      ✔ forcats 0.5.2 
-── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-✖ lubridate::as.difftime() masks base::as.difftime()
-✖ lubridate::date()        masks base::date()
-✖ dplyr::filter()          masks stats::filter()
-✖ lubridate::intersect()   masks base::intersect()
-✖ dplyr::lag()             masks stats::lag()
-✖ lubridate::setdiff()     masks base::setdiff()
-✖ lubridate::union()       masks base::union()
-```
-
-Create a function formulate_and_run_multipart_query to combine results from multiple queries
-
+### Create Functions
+**Combine results from multiple queries**
 ```
 formulate_and_run_multipart_query <- function(subqueries, final_tbl) {
     query <- str_c('WITH\n', str_c(subqueries, collapse = ',\n\n'), str_glue('\n\n\nSELECT * FROM {final_tbl}'))
@@ -47,22 +21,25 @@ formulate_and_run_multipart_query <- function(subqueries, final_tbl) {
     return(results)
 }
 ```
-
+**Store file names for case and control cohorts**
 ```
 DATESTAMP <- strftime(now(), '%Y%m%d')
 DESTINATION <- str_glue('{Sys.getenv("WORKSPACE_BUCKET")}/data/aou/pheno/{DATESTAMP}/')
+
 CASE_FILENAME <- 'case.csv'
 CASE_ID_FILENAME <- 'case_ids.tsv'
+
 CONTROL_FILENAME <- 'control.csv'
 CONTROL_ID_FILENAME <- 'control_ids.tsv'
+
+# files for testing purposes
 TEST_CASE_FILENAME <- 'test_case.csv'
 TEST_CASE_ID_FILENAME <- 'test_case_ids.tsv'
+
 TEST_CONTROL_FILENAME <- 'test_control.csv'
 TEST_CONTROL_ID_FILENAME <- 'test_control_ids.tsv'
 ```
-
-Query for demographics data, select on everyone on All of Us that has srWGS data
-
+**Query for demographics data, select on everyone on All of Us that has srWGS data**
 ```
 DEMOGRAPHICS_QUERY <- str_glue('
 -- This query represents dataset "Demographics for AoU WGS cohort" for domain "person" and was
@@ -87,8 +64,11 @@ demographics_tbl AS (
         SELECT person_id from `cb_search_person` p
         WHERE has_whole_genome_variant = 1))
 )')
+```
+```
 demographics <- formulate_and_run_multipart_query(c(DEMOGRAPHICS_QUERY), 'demographics_tbl')
 head(demographics)
+
 WITH
 -- This query represents dataset "Demographics for AoU WGS cohort" for domain "person" and was
 -- generated for All of Us Controlled Tier Dataset v5 alpha and then further edited.
@@ -115,7 +95,7 @@ demographics_tbl AS (
 
 SELECT * FROM demographics_tbl
 ```
-
+*Output*
 ```
 Dimensions of result: num_rows=245388 num_cols=6
 
@@ -127,7 +107,7 @@ Dimensions of result: num_rows=245388 num_cols=6
 2002-06-15	1468095	PMI: Skip	PMI: Skip	PMI: Skip	No matching concept
 ```
 
-Query for case sample, select on people with ICD10 codes 438120, 438130, 440693
+**a. Query for case sample, select on people with ICD10 codes 438120, 438130, 440693; these are the ICD10 codes that characterize a stringent definition of OUD**
 
 ```
 OPIOID_CONDITIONS_QUERY <- "
@@ -279,7 +259,7 @@ opioid_conditions_tbl AS (
                                         ON c_occurrence.condition_concept_id = c_standard_concept.concept_id)"
 ```
 
-3a. Query for filling all entries in start and end times so that we don't have null values. This is because some condition records do not have an end time. When that is the case, use the start time as the end time.
+**b. Query for filling all entries in start and end times so that we don't have null values. This is because some condition records do not have an end time. When that is the case, use the start time as the end time.**
 
 ```
 OPIOID_CONDITIONS_WITH_END_TIME_FILLED_QUERY <- '
@@ -296,7 +276,7 @@ opioid_conditions_with_end_time_filled_tbl AS (
 )'
 ```
 
-3b. Query for counting the condition occurrences for each person. This is because one person can be diagnosed with the same condition at different times. We also want to determine the outer bounds of the time interval over which the person has been diagnosed with OUD.
+**Query for counting the condition occurrences for each person. This is because one person can be diagnosed with the same condition at different times. We also want to determine the outer bounds of the time interval over which the person has been diagnosed with OUD.**
 
 ```
 OPIOID_CONDITIONS_SUMMARY_PER_PERSON_QUERY <- '
@@ -315,7 +295,7 @@ opioid_conditions_summary_per_person_tbl AS (
 )'
 ```
 
-3c. Query for combining the three queries defined above
+**c. Query for combining the three queries defined above**
 
 ```
 opioid_conditions_summary_per_person <- formulate_and_run_multipart_query(
@@ -526,6 +506,7 @@ opioid_conditions_summary_per_person_tbl AS (
 
 SELECT * FROM opioid_conditions_summary_per_person_tbl
 ```
+*Output*
 ```
 Dimensions of result: num_rows=6144 num_cols=6
 
@@ -603,7 +584,7 @@ opioid_conditions_summary_per_person %>%
 1450821	2008-05-08 10:14:07	2016-11-02 10:30:00	79	5	Combined opioid with other drug dependence, continuous, Opioid abuse, Opioid dependence, Combined opioid with other drug dependence, Episodic opioid dependence
 ```
 
-3d. Query for combining demographics and OUD conditions into one dataframe for case sample
+**d. Query for combining demographics and OUD conditions into one dataframe for case sample**
 
 ```
 CASE_QUERY <- '
@@ -844,7 +825,7 @@ case_tbl AS (
 
 SELECT * FROM case_tbl
 ```
-
+*Output*
 ```
 Dimensions of result: num_rows=6144 num_cols=11
 
@@ -870,7 +851,7 @@ head(case)
 ```
 
 
-Query for control sample, select on people who answered "yes" to some degrees of opioid consumption, but excluding those who are already in our case sample
+**Query for control sample, select on people who answered "yes" to some degrees of opioid consumption, but excluding those who are already in our case sample**
 ```
 ## control
 OPIOID_SURVEYS_QUERY <- "
